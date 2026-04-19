@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import { initialAnimals, initialHotspots } from '../data/mockData';
 
 const SanctuaryContext = createContext();
@@ -8,15 +8,46 @@ export const useSanctuary = () => {
 };
 
 export const SanctuaryProvider = ({ children }) => {
-  const [animals] = useState(initialAnimals);
-  const [hotspots, setHotspots] = useState(initialHotspots);
+  const [animals, setAnimals] = useState(() => {
+    const saved = localStorage.getItem('wildlife_animals_v2');
+    return saved ? JSON.parse(saved) : initialAnimals;
+  });
   
-  // Strict Users Database
-  const [registeredUsers, setRegisteredUsers] = useState([
-    { uid: 'nishan', password: '3625', role: 'admin' }
-  ]);
+  const [hotspots, setHotspots] = useState(() => {
+    const saved = localStorage.getItem('wildlife_hotspots_v2');
+    return saved ? JSON.parse(saved) : initialHotspots;
+  });
   
-  const [user, setUser] = useState(null); // { uid, role }
+  const [registeredUsers, setRegisteredUsers] = useState(() => {
+    const saved = localStorage.getItem('wildlife_users');
+    return saved ? JSON.parse(saved) : [{ uid: 'nishan', password: '3625', role: 'admin' }];
+  });
+  
+  const [user, setUser] = useState(() => {
+    const saved = sessionStorage.getItem('wildlife_currentUser');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  // Save changes to localStorage/sessionStorage
+  useEffect(() => {
+    localStorage.setItem('wildlife_animals_v2', JSON.stringify(animals));
+  }, [animals]);
+
+  useEffect(() => {
+    localStorage.setItem('wildlife_hotspots_v2', JSON.stringify(hotspots));
+  }, [hotspots]);
+
+  useEffect(() => {
+    localStorage.setItem('wildlife_users', JSON.stringify(registeredUsers));
+  }, [registeredUsers]);
+
+  useEffect(() => {
+    if (user) {
+      sessionStorage.setItem('wildlife_currentUser', JSON.stringify(user));
+    } else {
+      sessionStorage.removeItem('wildlife_currentUser');
+    }
+  }, [user]);
 
   const registerUser = (uid, password) => {
     if (registeredUsers.some(u => u.uid === uid)) {
@@ -54,6 +85,20 @@ export const SanctuaryProvider = ({ children }) => {
     }
   };
 
+  const deleteAnimal = (animalId) => {
+    if (user?.role === 'admin') {
+      setAnimals(prev => prev.filter(a => a.id !== animalId));
+      // Also delete associated hotspots
+      setHotspots(prev => prev.filter(h => h.animalId !== animalId));
+    }
+  };
+
+  const deleteUser = (uid) => {
+    if (user?.role === 'admin' && uid !== 'nishan') { // Prevent deleting main admin
+      setRegisteredUsers(prev => prev.filter(u => u.uid !== uid));
+    }
+  };
+
   const isAuthenticated = user !== null;
   const isAdmin = user?.role === 'admin';
 
@@ -63,6 +108,8 @@ export const SanctuaryProvider = ({ children }) => {
     registeredUsers,
     addHotspot,
     deleteHotspot,
+    deleteAnimal,
+    deleteUser,
     isAuthenticated,
     isAdmin,
     user,

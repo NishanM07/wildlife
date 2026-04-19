@@ -5,6 +5,8 @@ import { Leaf, LogOut, ShieldAlert, User } from 'lucide-react';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import AnimalHotspots from './pages/AnimalHotspots';
+import UserProfile from './pages/UserProfile';
+import { Link } from 'react-router-dom';
 
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated } = useSanctuary();
@@ -24,13 +26,13 @@ const Navbar = () => {
         WildReserve
       </div>
       <div className="nav-links">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)' }}>
+        <Link to="/profile" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent-color)' }}>
           {isAdmin ? <ShieldAlert size={18} /> : <User size={18} />}
           <span style={{ fontWeight: 600 }}>{user?.uid}</span>
           <span style={{ fontSize: '0.8rem', background: 'rgba(255,255,255,0.2)', padding: '0.1rem 0.5rem', borderRadius: '10px' }}>
             {isAdmin ? 'Admin' : 'User'}
           </span>
-        </div>
+        </Link>
         <button className="btn btn-outline" onClick={logout} style={{ padding: '0.5rem 1rem' }}>
           <LogOut size={18} /> Logout
         </button>
@@ -62,6 +64,14 @@ const App = () => {
             element={
               <ProtectedRoute>
                 <AnimalHotspots />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/profile" 
+            element={
+              <ProtectedRoute>
+                <UserProfile />
               </ProtectedRoute>
             } 
           />

@@ -3,19 +3,21 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSanctuary } from '../context/SanctuaryContext';
 import { ArrowLeft, MapPin, Calendar, Compass, ExternalLink, Trash2 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 
-let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: iconRetinaUrl,
+  iconUrl: iconUrl,
+  shadowUrl: shadowUrl
 });
-L.Marker.prototype.options.icon = DefaultIcon;
 
 const RecenterAutomatically = ({ lat, lng }) => {
   const map = useMap();
@@ -49,7 +51,7 @@ const AnimalHotspots = () => {
   }
 
   const openGoogleMaps = (lat, lng) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving&dir_action=navigate`;
     window.open(url, '_blank');
   };
 
@@ -79,15 +81,9 @@ const AnimalHotspots = () => {
         </div>
       </div>
 
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr 2fr', 
-        gap: '2rem',
-        flex: 1,
-        minHeight: '600px'
-      }}>
+      <div className="hotspots-grid">
         {/* Sidebar List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', overflowY: 'auto', paddingRight: '0.5rem' }}>
+        <div className="hotspots-sidebar">
           {animalHotspots.length === 0 ? (
             <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center' }}>
               <Compass size={48} color="var(--text-secondary)" style={{ margin: '0 auto 1rem' }} />
@@ -183,29 +179,31 @@ const AnimalHotspots = () => {
               />
               <RecenterAutomatically lat={selectedHotspot.latitude} lng={selectedHotspot.longitude} />
               
-              {animalHotspots.map(hotspot => (
-                <Marker 
-                  key={hotspot.id} 
-                  position={[hotspot.latitude, hotspot.longitude]}
-                  eventHandlers={{
-                    click: () => setSelectedHotspot(hotspot),
-                  }}
-                >
-                  <Popup>
-                    <strong>{hotspot.name}</strong><br/>
-                    {hotspot.description.substring(0, 50)}...
-                    <br/><br/>
-                    <a 
-                      href={`https://www.google.com/maps/dir/?api=1&destination=${hotspot.latitude},${hotspot.longitude}`}
-                      target="_blank" 
-                      rel="noreferrer"
-                      style={{ color: '#2D6A4F', fontWeight: 'bold', textDecoration: 'underline' }}
-                    >
-                      Open in Google Maps
-                    </a>
-                  </Popup>
-                </Marker>
-              ))}
+              <MarkerClusterGroup chunkedLoading>
+                {animalHotspots.map(hotspot => (
+                  <Marker 
+                    key={hotspot.id} 
+                    position={[hotspot.latitude, hotspot.longitude]}
+                    eventHandlers={{
+                      click: () => setSelectedHotspot(hotspot),
+                    }}
+                  >
+                    <Popup>
+                      <strong>{hotspot.name}</strong><br/>
+                      {hotspot.description.substring(0, 50)}...
+                      <br/><br/>
+                      <a 
+                        href={`https://www.google.com/maps/dir/?api=1&destination=${hotspot.latitude},${hotspot.longitude}&travelmode=driving&dir_action=navigate`}
+                        target="_blank" 
+                        rel="noreferrer"
+                        style={{ color: '#2D6A4F', fontWeight: 'bold', textDecoration: 'underline' }}
+                      >
+                        Open in Google Maps
+                      </a>
+                    </Popup>
+                  </Marker>
+                ))}
+              </MarkerClusterGroup>
             </MapContainer>
           ) : (
              <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
